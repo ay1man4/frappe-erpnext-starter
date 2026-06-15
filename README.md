@@ -421,4 +421,15 @@ docker compose build --no-cache
 
 ## License
 
-MIT — use at your own risk. Always test upgrades on copies of production data.
+This template (the Dockerfiles, scripts, configuration, and documentation in
+this repository) is licensed under the **MIT License** — see [`LICENSE`](LICENSE).
+Use at your own risk. Always test upgrades on copies of production data.
+
+The software it provisions retains its own licensing:
+
+- **ERPNext** — GNU GPL v3
+- **Frappe Framework** — MIT
+
+This repository orchestrates and deploys those projects but does not relicense
+them. Any custom or external apps you add via `deploy/user-apps.json` remain
+subject to their respective licenses.
