@@ -1,0 +1,38 @@
+# =============================================================================
+# Dev override — merged automatically by `docker compose up`.
+# Holds local-only conveniences: published ports, phpMyAdmin, and the live
+# bind-mount of custom apps so new/edited apps appear without rebuilding.
+# =============================================================================
+services:
+  erpnext:
+    ports:
+      - "8000:8000"
+    environment:
+      # Where the host ./apps folder is mounted inside the container.
+      # The entrypoint symlinks each app from here into frappe-bench/apps and,
+      # in local mode, scaffolds declared-but-missing apps into it.
+      CUSTOM_APPS_STAGING: /home/frappe/custom_apps
+    volumes:
+      # Live source of local custom apps (NOT mounted over frappe-bench/apps).
+      - ./apps:/home/frappe/custom_apps
+      # Live app manifest: editing ./deploy/user-apps.json is picked up on restart
+      # (no rebuild). Read-only — the entrypoint only reads it. Directory mount
+      # (not single-file) so editor save-by-rename doesn't break it.
+      - ./deploy:/opt/deploy:ro
+      # Live entrypoint/phase scripts: overlay the baked /opt/erpnext-scripts so
+      # editing ./deploy/scripts/*.sh applies on container restart (no rebuild).
+      # Read-only. Scripts are invoked via `bash`, so this works regardless of
+      # the host exec bit (important on Windows bind mounts).
+      - ./deploy/scripts:/opt/erpnext-scripts:ro
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    platform: ${DOCKER_PLATFORM:-linux/amd64}
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    environment:
+      PMA_HOST: mariadb
+      PMA_PORT: 3306
+    ports:
+      - "8090:80"

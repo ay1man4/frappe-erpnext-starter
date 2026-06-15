@@ -1,0 +1,53 @@
+# =============================================================================
+# Base compose — LOCAL DEVELOPMENT ONLY.
+# (Production deploys use the Dockerfile directly, e.g. on Railway.)
+# Dev-only extras (phpmyadmin, port maps, custom-app live-mount) live in
+# docker-compose.override.yml, which Compose merges automatically.
+# =============================================================================
+services:
+  mariadb:
+    # Frappe v15 targets MariaDB 10.6.
+    image: mariadb:10.6
+    environment:
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./deploy/config/mariadb.cnf:/etc/mysql/my.cnf:ro
+    healthcheck:
+      test: ["CMD-SHELL", "healthcheck.sh --connect --innodb_initialized || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  erpnext:
+    build:
+      context: .
+    env_file: .env
+    depends_on:
+      mariadb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./logs:/home/frappe/frappe-bench/logs
+      - ./sites:/home/frappe/frappe-bench/sites
+    healthcheck:
+      # Accept any HTTP response (2xx/3xx/5xx) as proof the web stack is up.
+      # /api/method/ping fails before the setup wizard is completed.
+      test: ["CMD-SHELL", "curl -sS -o /dev/null -w \"%{http_code}\" http://localhost:${PORT:-8000}/ | grep -qE '^(2|3|5)' || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 240s
+
+volumes:
+  db_data:

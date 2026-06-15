@@ -1,0 +1,23 @@
+# Force LF line endings so shell scripts work when checked out on Windows.
+# Without this, CRLF endings cause "bad interpreter" / "\r" errors in the container.
+* text=auto eol=lf
+
+*.sh text eol=lf
+*.bash text eol=lf
+Dockerfile text eol=lf
+*.cnf text eol=lf
+*.json text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.md text eol=lf
+.env.example text eol=lf
+Procfile text eol=lf
+
+# Binary files should never be normalized.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.gz binary
+*.zip binary

@@ -1,0 +1,95 @@
+# Python
+*.py[cod]
+__pycache__/
+*.pyo
+*.pyd
+*.egg-info/
+.eggs/
+build/
+dist/
+
+# Virtualenv / env files
+venv/
+.venv/
+env/
+ENV/
+.env
+.env.*
+!.env.example
+.envrc
+
+# Node / JS
+node_modules/
+npm-debug.log*
+yarn-error.log
+.pnp.*
+.pnp.js
+dist/
+build/
+public/build/
+public/dist/
+
+# Frappe / Bench / ERPNext specific
+bench-repo/
+assets/
+# Keep the logs/ dir (bind-mount target) but ignore its runtime contents.
+logs/*
+!logs/.gitkeep
+
+# ==========================
+# Sites folder
+# ==========================
+# sites/ is a runtime / persistent-volume mount — NOTHING in it is version-
+# controlled. Its content comes from the baked image (apps.txt, assets/) and is
+# generated at runtime (site data, common_site_config, apps.json, sites.txt,
+# markers). The app manifest now lives in deploy/user-apps.json, not here.
+# A tracked .gitkeep keeps the dir present for the local dev bind-mount.
+sites/*
+!sites/.gitkeep
+backup/*.json
+
+# ==========================
+# Custom apps folder
+# ==========================
+apps/*/__pycache__/
+apps/*/*.pyc
+apps/*/*.pyo
+apps/*/dist/
+apps/*/node_modules/
+
+# If using bench to build assets
+assets/
+public/dist/
+
+# Database / backups
+*.sqlite3
+*.db
+*.sql
+*.sql.gz
+*.bak
+
+
+# Tests / coverage
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# Editors / OS
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+.DS_Store
+Thumbs.db
+
+# Docker / CI
+# Note: docker-compose.override.yml IS committed in this template (ships dev
+# tooling: phpmyadmin, port maps, custom-app live-mount). Add a local-only
+# override under a different name if you need per-developer tweaks.
+.env.ci
+
+# Misc
+*.swp
+*.swo
+*.pid

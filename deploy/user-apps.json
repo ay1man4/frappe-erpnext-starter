@@ -1,0 +1,18 @@
+{
+  "_readme": "Declare apps here, then restart. CUSTOM apps: LOCAL dev auto-scaffolds a missing one using the fields below; PRODUCTION requires its source under apps/<name>/ + an image rebuild. EXTERNAL apps (git URL): LOCAL dev git-fetches them at runtime; PRODUCTION requires an image rebuild (fetched at build). External 'branch' MUST match the ERPNext major in the Dockerfile (e.g. version-15).",
+  "_custom_fields": {
+    "name": "REQUIRED — app module name, snake_case (e.g. my_app).",
+    "title": "optional — human-readable title (default: Title-cased name).",
+    "description": "optional — short description (default: '<name> app').",
+    "publisher": "optional — author/company (default: 'Custom').",
+    "email": "optional — publisher email (default: admin@example.com).",
+    "license": "optional — SPDX id: mit | agpl-3.0 | gpl-3.0 | apache-2.0 | bsd-3-clause | unlicense ... (default: mit)."
+  },
+  "_examples": {
+    "custom_minimal": [{ "name": "my_app" }],
+    "custom_full":    [{ "name": "my_app", "title": "My App", "description": "Internal tools", "publisher": "Acme", "email": "dev@acme.com", "license": "mit" }],
+    "external":       [{ "url": "https://github.com/frappe/hrms", "branch": "version-15" }]
+  },
+  "custom": [],
+  "external": []
+}

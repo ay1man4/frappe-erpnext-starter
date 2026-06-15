@@ -1,0 +1,9 @@
+# This directory holds your LOCAL custom Frappe apps (one folder per app).
+# It is copied into the container's frappe-bench/apps/ at build time.
+#
+# Do NOT place frappe or erpnext here -- they come from the base image.
+#
+# Declare apps in ../deploy/user-apps.json under "custom", e.g.:
+#   { "custom": [ { "name": "my_app" } ], "external": [] }
+#
+# In dev, declared-but-missing apps are auto-scaffolded on container start.

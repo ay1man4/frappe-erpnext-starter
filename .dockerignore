@@ -1,0 +1,39 @@
+# =============================================================================
+# .dockerignore — keep the build context lean.
+# Only the files required by the Dockerfile need to reach the Docker daemon.
+# =============================================================================
+
+# Git metadata
+.git/
+.gitignore
+.gitattributes
+
+# Local environment / secrets — never bake these into an image
+.env
+.env.*
+!.env.example
+
+# sites/ is never copied into the image (the Dockerfile doesn't COPY it; the
+# baked sites/ comes from the base image + build-time custom-app appends, and is
+# seeded onto empty volumes at runtime). Keep it out of the build context.
+sites/
+
+# Runtime logs
+logs/
+
+# Docker Compose files (not used inside the image)
+docker-compose*.yml
+
+# Deployment / docs (not needed inside the image)
+railway.json
+README.md
+handoff.md
+
+# Python / Node artefacts
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+node_modules/
+.DS_Store
+Thumbs.db
