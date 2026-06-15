@@ -1,6 +1,8 @@
-# ERPNext Dockerized Base-Image Template
+# frappe-erpnext-starter
 
-A production-ready, Railway-deployable ERPNext container with:
+A production-ready, Dockerized ERPNext starter template that runs the same on
+Windows, macOS, and Linux, and deploys cleanly to Railway. It ships as a single
+container with:
 
 - **Single-container** web + workers + scheduler (Honcho/Procfile)
 - **Declarative app management** via `deploy/user-apps.json`:
@@ -41,7 +43,7 @@ A production-ready, Railway-deployable ERPNext container with:
 
 ```bash
 # 1. Clone and enter the repo
-git clone <your-fork-url> erpnext-base && cd erpnext-base
+git clone <your-fork-url> frappe-erpnext-starter && cd frappe-erpnext-starter
 
 # 2. Copy environment defaults
 cp .env.example .env
