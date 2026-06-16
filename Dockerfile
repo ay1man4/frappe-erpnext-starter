@@ -64,7 +64,10 @@ RUN set -eu; \
         rm -rf "apps/$name"; \
         cp -a "$app" "apps/$name"; \
         bench pip install -e "apps/$name"; \
-        grep -qxF "$name" sites/apps.txt 2>/dev/null || echo "$name" >> sites/apps.txt; \
+        if ! grep -qxF "$name" sites/apps.txt 2>/dev/null; then \
+          [ -s sites/apps.txt ] && [ -n "$(tail -c1 sites/apps.txt)" ] && printf '\n' >> sites/apps.txt; \
+          echo "$name" >> sites/apps.txt; \
+        fi; \
       fi; \
     done
 
