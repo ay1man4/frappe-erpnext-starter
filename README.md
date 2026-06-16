@@ -343,12 +343,12 @@ Three version numbers must stay compatible:
 
 1. **ERPNext base image** (`ERPNEXT_VERSION` in `deploy/release.env`)
 2. **External app branches** (`"branch": "version-15"` in `user-apps.json`)
-3. **MariaDB** (`MARIADB_VERSION` in `deploy/release.env`; 10.6 for v15)
+3. **MariaDB** (`MARIADB_VERSION` in `deploy/release.env`; 10.6 for v15, 11.8 for v16)
 
 | ERPNext Image | External Branch | MariaDB |
 |---------------|-----------------|---------|
 | v15.x | `version-15` | 10.6 |
-| v16.x | `version-16` | 10.6+ (verify release notes) |
+| v16.x | `version-16` | 11.8 |
 
 **Golden rule**: base major == every external branch major.
 
@@ -381,8 +381,8 @@ Changing a patch version or an external app patch branch is low risk:
 1. **Bump the base image pin** in `deploy/release.env` (and the Railway
    `ERPNEXT_VERSION` build variable):
    ```bash
-   ERPNEXT_VERSION=v16.81.0
-   MARIADB_VERSION=10.6   # raise if v16 requires a newer MariaDB
+   ERPNEXT_VERSION=v16.10.1
+   MARIADB_VERSION=11.8   # v16's official stack uses MariaDB 11.8
    ```
    On `release/vN` branches this is the only version edit; the `Dockerfile`
    is unchanged. (Typically you bump on `main`/the matching `release/v16`.)
@@ -401,7 +401,7 @@ Changing a patch version or an external app patch branch is low risk:
 5. **Set the upgrade acknowledgment env vars** (so the guard allows the migration):
    ```
    UPGRADE_ERPNEXT_VERSION=16
-   UPGRADE_DB_VERSION=10.6   # or new version if MariaDB also changed
+   UPGRADE_DB_VERSION=11.8   # set to the new MariaDB version when it changes
    ```
 
 6. **Redeploy**. The container will:
