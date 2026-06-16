@@ -65,6 +65,25 @@ if ! ( touch "$VOLUME_MARKER" 2>/dev/null ); then
 fi
 date -u +%Y-%m-%dT%H:%M:%SZ > "$VOLUME_MARKER" 2>/dev/null || true
 
+# Reconcile sites/apps.txt with the apps baked into the image. A persistent
+# volume keeps its OWN apps.txt; when a newer image bakes a new app (custom or
+# external), it must be registered here or `bench install-app` fails with
+# "App <name> not in apps.txt". Union the image seed's list into the volume's,
+# preserving existing order and appending any missing entries (newline-safe so a
+# seed file without a trailing newline can't concatenate two app names).
+if [ -f "$SEED_DIR/apps.txt" ]; then
+  AT="$SITES_DIR/apps.txt"
+  [ -f "$AT" ] || : > "$AT"
+  while IFS= read -r _app || [ -n "$_app" ]; do
+    [ -n "$_app" ] || continue
+    if ! grep -qxF "$_app" "$AT" 2>/dev/null; then
+      [ -s "$AT" ] && [ -n "$(tail -c1 "$AT")" ] && printf '\n' >> "$AT"
+      echo "$_app" >> "$AT"
+      log "Registered baked app '$_app' in sites/apps.txt"
+    fi
+  done < "$SEED_DIR/apps.txt"
+fi
+
 # Railway mounts volumes as root; bench runs as frappe (uid 1000).
 # Only chown files that are actually wrong — a full recursive chown on a
 # large sites volume with thousands of uploaded files can take minutes.
