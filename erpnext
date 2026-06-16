@@ -1,0 +1,27 @@
+#!/usr/bin/env sh
+# =============================================================================
+# Cross-platform dev wrapper (macOS / Linux / Git Bash / WSL).
+# Windows cmd/PowerShell users: use erpnext.cmd (same arguments).
+#
+# Runs `docker compose` with BOTH env files loaded automatically:
+#   .env                -> your local settings/secrets (created from .env.example)
+#   deploy/release.env  -> pinned versions (ERPNEXT_VERSION, MARIADB_VERSION)
+# so you never have to remember the --env-file flags.
+#
+# Usage (pass any docker compose subcommand/args):
+#   ./erpnext up --build
+#   ./erpnext restart erpnext
+#   ./erpnext exec erpnext bash
+#   ./erpnext down
+# =============================================================================
+set -eu
+
+# Resolve repo root (this script's directory) so relative paths always work.
+cd "$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
+
+if [ ! -f .env ]; then
+  cp .env.example .env
+  echo ">> Created .env from .env.example — review secrets before production use."
+fi
+
+exec docker compose --env-file .env --env-file deploy/release.env "$@"

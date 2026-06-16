@@ -1,12 +1,34 @@
 # =============================================================================
 # ERPNext base-image template
-# The Frappe/ERPNext major here MUST match every `external` app branch in
+# The ERPNext major (ERPNEXT_VERSION) MUST match every `external` app branch in
 # user-apps.json (e.g. v15 image <-> version-15 apps). See README "Upgrading".
+#
+# ERPNEXT_VERSION is a REQUIRED build arg with no default — supplied from
+# deploy/release.env locally (via compose) and as a Railway build variable in
+# production. The guard stage below stops the build with a clear message if it
+# is missing, so an image is never built against an unintended base.
 # =============================================================================
-FROM frappe/erpnext:v15.111.0
+ARG ERPNEXT_VERSION
+
+# ---- Guard stage: fail fast with a readable message if ERPNEXT_VERSION is unset.
+FROM busybox:1.36 AS version-guard
+ARG ERPNEXT_VERSION
+RUN test -n "$ERPNEXT_VERSION" \
+    || { echo "ERROR: ERPNEXT_VERSION build arg is required (set deploy/release.env or a Railway build variable)."; exit 1; }
+
+# ---- Main stage. The :-MISSING sentinel keeps the image reference syntactically
+# valid when the arg is empty, so the guard's clear error surfaces instead of an
+# opaque 'invalid reference format'. The COPY --from at the end of this stage
+# forces the guard to pass before the image is assembled.
+FROM frappe/erpnext:${ERPNEXT_VERSION:-MISSING}
+ARG ERPNEXT_VERSION
 
 USER root
 WORKDIR /home/frappe/frappe-bench
+
+# Force a build dependency on the guard stage: if ERPNEXT_VERSION was missing,
+# the guard already failed and this COPY (hence the whole build) cannot proceed.
+COPY --from=version-guard /etc/hostname /tmp/.version-guard-ok
 
 # Tooling: gosu (drop root -> frappe in entrypoint) + jq (parse user-apps.json).
 RUN apt-get update \

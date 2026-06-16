@@ -20,12 +20,13 @@ container with:
 
 1. [Quick Start (Local Dev)](#quick-start-local-dev)
 2. [How It Works](#how-it-works)
-3. [Adding Apps](#adding-apps)
+3. [Version Pinning & Release Branches](#version-pinning--release-branches)
+4. [Adding Apps](#adding-apps)
    - [Add a Local Custom App](#add-a-local-custom-app)
    - [Add an External Frappe App](#add-an-external-frappe-app)
-4. [Deploying to Railway](#deploying-to-railway)
-5. [Environment Variables](#environment-variables)
-6. [Upgrading (detailed guide)](#upgrading)
+5. [Deploying to Railway](#deploying-to-railway)
+6. [Environment Variables](#environment-variables)
+7. [Upgrading (detailed guide)](#upgrading)
    - [Concepts & Version Matrix](#concepts--version-matrix)
    - [Pre-flight Checklist](#pre-flight-checklist)
    - [Routine/Minor Changes](#routineminor-changes)
@@ -34,8 +35,8 @@ container with:
    - [Manual Backup & Restore](#manual-backup--restore)
    - [Rollback Procedure](#rollback-procedure)
    - [Troubleshooting](#troubleshooting)
-7. [Safety Guards Reference](#safety-guards-reference)
-8. [Build Cache Note](#build-cache-note)
+8. [Safety Guards Reference](#safety-guards-reference)
+9. [Build Cache Note](#build-cache-note)
 
 ---
 
@@ -45,18 +46,35 @@ container with:
 # 1. Clone and enter the repo
 git clone <your-fork-url> frappe-erpnext-starter && cd frappe-erpnext-starter
 
-# 2. Copy environment defaults
-cp .env.example .env
+# 2. Start the stack (creates .env on first run, builds, and starts)
+./erpnext up --build        # Windows cmd/PowerShell:  .\erpnext up --build
 
-# 3. Start the stack (MariaDB 10.6, Redis, ERPNext)
-docker compose up --build
+# 3. Open http://127.0.0.1:8000 and complete the ERPNext setup wizard
 
-# 4. Open http://127.0.0.1:8000 and complete the ERPNext setup wizard
-
-# 5. Restart the container to install any declared custom/external apps
+# 4. Restart to install any declared custom/external apps
 #    (they are gated until setup_complete=1)
-docker compose restart erpnext
+./erpnext restart erpnext   # Windows:  .\erpnext restart erpnext
 ```
+
+The `erpnext` wrapper (`./erpnext` on macOS/Linux/Git Bash/WSL, `.\erpnext` on Windows
+`cmd`/PowerShell) is a thin pass-through to `docker compose` that **automatically
+loads both env files** — your `.env` (settings/secrets) and `deploy/release.env`
+(the pinned `ERPNEXT_VERSION` and `MARIADB_VERSION`) — so you never type the
+`--env-file` flags. It creates `.env` from `.env.example` on first run. Pass any
+Compose args through it, e.g. `./erpnext down`, `./erpnext logs -f`, `./erpnext exec erpnext bash`.
+
+> **No wrapper / raw command** (works the same on every OS):
+> ```bash
+> cp .env.example .env   # first run only
+> docker compose --env-file .env --env-file deploy/release.env up --build
+> ```
+> Both files are required: `--env-file` *replaces* the default `.env`, so passing
+> only `deploy/release.env` would blank out your `.env` values (e.g.
+> `DB_ROOT_PASSWORD`). Listing both keeps your settings and adds the version pins.
+>
+> **Versions are required, not defaulted.** If they aren't loaded, Compose (and the
+> Docker build guard) fail fast with a clear "required" message — never a silent
+> wrong version.
 
 Local extras (phpMyAdmin on :8090, hot-reload custom apps) are in `docker-compose.override.yml`,
 merged automatically.
@@ -104,6 +122,62 @@ Example: `FROM frappe/erpnext:v15.x` ↔ `"branch": "version-15"`.
 
 ---
 
+## Version Pinning & Release Branches
+
+All version-pinned defaults live in a single file, `deploy/release.env`:
+
+```bash
+ERPNEXT_VERSION=v15.111.0   # required base image tag (build arg)
+MARIADB_VERSION=10.6        # local/compose only (Railway uses managed MariaDB)
+```
+
+The `Dockerfile` and `docker-compose.yml` read these values; neither hardcodes a
+version. **There are no silent defaults** — a missing `ERPNEXT_VERSION` stops the
+Docker build (guard stage), and a missing `MARIADB_VERSION`/`ERPNEXT_VERSION`
+makes Compose fail fast.
+
+> **External app branches are not pinned here.** Branch naming is not standard
+> across Frappe apps — official ERPNext-aligned apps (`frappe`, `erpnext`, `hrms`,
+> `payments`, `healthcare`) use `version-15`/`version-16`, but others (e.g.
+> `frappe/lms`) ship from `main`/`develop`. Set each app's branch explicitly via
+> the per-app `branch` field in `deploy/user-apps.json`.
+
+### Branch Model
+
+- **`main`** tracks the **newest** supported major. Its `release.env` holds the
+  newest pins; the `Dockerfile`/compose carry no version diff.
+- **`release/v15`, `release/v16`** are long-lived branches whose **only** intended
+  difference from `main` is `deploy/release.env` (pinned to that major).
+
+`deploy/release.env` is protected by a `merge=ours` git driver (see `.gitattributes`),
+so merging `main` into a release branch **keeps the branch's pins and never conflicts**.
+
+**One-time per clone** — enable the driver (git does not commit this config):
+
+```bash
+git config merge.ours.driver true
+```
+
+If you skip this, the merge falls back to a normal (possibly conflicting) merge of
+`release.env`.
+
+### Cutting a Release / Updating "latest"
+
+Tags are plain git tags. Immutable per-cut tags plus moving "latest" pointers:
+
+```bash
+# Immutable release tag (annotated)
+git tag -a v15.111.0 -m "ERPNext v15.111.0 pin" && git push origin v15.111.0
+
+# Moving pointers (lightweight, force-updated)
+git tag -f v15-latest release/v15 && git push -f origin v15-latest
+git tag -f latest <newest-release>  && git push -f origin latest
+```
+
+See `.windsurf/workflows/cut-release.md` for the full checklist.
+
+---
+
 ## Adding Apps
 
 ### Add a Local Custom App
@@ -115,14 +189,14 @@ Example: `FROM frappe/erpnext:v15.x` ↔ `"branch": "version-15"`.
 
 2. **Option A (Dev auto-scaffold)** — restart the dev container:
    ```bash
-   docker compose restart erpnext
+   ./erpnext restart erpnext
    ```
    The entrypoint runs `bench new-app my_app --no-git`, moves it into the bind-mounted
    `apps/`, symlinks it, and installs it to the site.
 
 3. **Option B (Explicit/manual)** — exec in and scaffold:
    ```bash
-   docker compose exec erpnext bash
+   ./erpnext exec erpnext bash
    bench new-app my_app --no-git
    # Move it from apps/ to /home/frappe/custom_apps/ so it persists to host
    ```
@@ -149,14 +223,14 @@ and installs it (no rebuild). It lands in the ephemeral `apps/`, so it re-fetche
 full container recreate:
 
 ```bash
-docker compose restart erpnext
+./erpnext restart erpnext
 ```
 
 **Production** — external apps must be baked into the image. Rebuild so `bench get-app`
 runs at build time:
 
 ```bash
-docker compose up --build
+./erpnext up --build
 ```
 
 A declared external app that isn't baked is a **hard error** in production (fail-fast with
@@ -200,11 +274,20 @@ a "rebuild" message), keeping prod images immutable and fast-booting.
    python3 -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
    ```
 
-6. **Deploy**. First boot creates the site and starts web-only (wizard not done).
+6. **Set the base-image version (REQUIRED).** Railway builds the `Dockerfile`
+   directly and cannot read `deploy/release.env`, so add a **build variable**
+   matching the value pinned on the branch this service deploys:
+   ```
+   ERPNEXT_VERSION=v15.111.0
+   ```
+   If omitted, the build stops at the guard stage with a clear error. (Point the
+   v15 service at `release/v15`, the v16 service at `release/v16`, etc.)
 
-7. **Complete the setup wizard** in your browser.
+7. **Deploy**. First boot creates the site and starts web-only (wizard not done).
 
-8. **Restart** the deployment — custom/external apps install and the full stack starts.
+8. **Complete the setup wizard** in your browser.
+
+9. **Restart** the deployment — custom/external apps install and the full stack starts.
 
 ---
 
@@ -212,6 +295,8 @@ a "rebuild" message), keeping prod images immutable and fast-booting.
 
 | Variable | Required | Description |
 |----------|----------|-------------|
+| `ERPNEXT_VERSION` | Yes (build) | Base image tag, from `deploy/release.env`. Required build arg; build fails if missing. On Railway set as a build variable. |
+| `MARIADB_VERSION` | Yes (compose) | MariaDB image tag, from `deploy/release.env`. Required by Compose; not used on Railway (managed MariaDB). |
 | `PROJECT_ENV` | Yes | `dev` (or unset) for hot reload, anything else for production |
 | `SITE_NAME` | Yes | Site identifier (e.g., `site1.local`) |
 | `DB_HOST` | Yes | MariaDB host |
@@ -256,9 +341,9 @@ BACKUP_MIN_FREE_MB=1024
 
 Three version numbers must stay compatible:
 
-1. **ERPNext base image** (`FROM frappe/erpnext:v15.x.y`)
+1. **ERPNext base image** (`ERPNEXT_VERSION` in `deploy/release.env`)
 2. **External app branches** (`"branch": "version-15"` in `user-apps.json`)
-3. **MariaDB** (10.6 for v15)
+3. **MariaDB** (`MARIADB_VERSION` in `deploy/release.env`; 10.6 for v15)
 
 | ERPNext Image | External Branch | MariaDB |
 |---------------|-----------------|---------|
@@ -282,8 +367,8 @@ Before any upgrade:
 
 Changing a patch version or an external app patch branch is low risk:
 
-1. Edit `user-apps.json` (external branch) or the base image tag in `Dockerfile`
-2. Commit and push/redeploy
+1. Edit `deploy/release.env` (`ERPNEXT_VERSION`) and/or `user-apps.json` (external branch)
+2. Commit and push/redeploy (on Railway, update the `ERPNEXT_VERSION` build variable too)
 3. The container boots, takes a backup, auto-migrates, and starts
 4. Verify in logs: `Migration succeeded`
 
@@ -293,10 +378,14 @@ Changing a patch version or an external app patch branch is low risk:
 
 #### Step-by-step
 
-1. **Bump the Dockerfile base image**:
-   ```dockerfile
-   FROM frappe/erpnext:v16.81.0
+1. **Bump the base image pin** in `deploy/release.env` (and the Railway
+   `ERPNEXT_VERSION` build variable):
+   ```bash
+   ERPNEXT_VERSION=v16.81.0
+   MARIADB_VERSION=10.6   # raise if v16 requires a newer MariaDB
    ```
+   On `release/vN` branches this is the only version edit; the `Dockerfile`
+   is unchanged. (Typically you bump on `main`/the matching `release/v16`.)
 
 2. **Bump every `external` branch** together:
    ```json
@@ -363,7 +452,8 @@ bench --site site1.local restore /path/to/backup-database.sql.gz \
 If a migration fails or the upgrade is broken:
 
 1. **Revert the code**:
-   - Revert `Dockerfile` to the previous base image tag
+   - Revert `deploy/release.env` (`ERPNEXT_VERSION`) to the previous base image tag
+     (and the Railway `ERPNEXT_VERSION` build variable)
    - Revert `user-apps.json` external branches to previous versions
    - Revert `apps/` code if needed
 
@@ -385,6 +475,8 @@ If a migration fails or the upgrade is broken:
 
 | Symptom | Cause | Fix |
 |---------|-------|-----|
+| `ERROR: ERPNEXT_VERSION build arg is required` | Build started without the version (e.g. missing Railway build var) | Set `ERPNEXT_VERSION` (from `deploy/release.env`) as a build arg/variable |
+| `ERPNEXT_VERSION is required` / `MARIADB_VERSION is required` (Compose) | Ran `docker compose` without loading the pins | Add `--env-file .env --env-file deploy/release.env` to the command (or `set -a; . deploy/release.env; set +a` on bash) |
 | `ERROR: Set UPGRADE_ERPNEXT_VERSION=...` | Major version jump not acknowledged | Set `UPGRADE_ERPNEXT_VERSION=<new-major>` and redeploy |
 | `Backup FAILED — aborting` | Disk full or DB unreachable | Free disk; check DB connectivity; retry |
 | `Migration FAILED` | Incompatible custom app, or data issue | Check logs; fix custom app; consider `AUTO_RESTORE_ON_FAIL=1` temporarily |
@@ -398,6 +490,7 @@ If a migration fails or the upgrade is broken:
 
 | Guard | Phase | Behavior |
 |-------|-------|----------|
+| G0 Build version | build | Stop the Docker build if `ERPNEXT_VERSION` build arg is missing (guard stage); Compose also fails fast if `ERPNEXT_VERSION`/`MARIADB_VERSION` are unset |
 | G1 Env validation | 00 | Hard-stop if required env vars missing |
 | G2 Volume mount | 05 | Hard-stop if `sites/` is not a writable mount (prevents ephemeral data loss) |
 | G3 Encryption consistency | 15 | Never silently change `encryption_key`; hard-stop on mismatch |
@@ -411,10 +504,10 @@ If a migration fails or the upgrade is broken:
 
 `COPY ./deploy/user-apps.json` appears **before** the `bench get-app` layer in the Dockerfile.
 Changing a branch or URL in the manifest invalidates that layer cache, forcing a re-fetch.
-If you ever see "stale external app" behavior, add `--no-cache` to your build:
+If you ever see "stale external app" behavior, build without cache:
 
 ```bash
-docker compose build --no-cache
+./erpnext build --no-cache
 ```
 
 ---
