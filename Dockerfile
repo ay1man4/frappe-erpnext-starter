@@ -14,7 +14,8 @@ ARG ERPNEXT_VERSION
 FROM busybox:1.36 AS version-guard
 ARG ERPNEXT_VERSION
 RUN test -n "$ERPNEXT_VERSION" \
-    || { echo "ERROR: ERPNEXT_VERSION build arg is required (set deploy/release.env or a Railway build variable)."; exit 1; }
+      || { echo "ERROR: ERPNEXT_VERSION build arg is required (set deploy/release.env or a Railway build variable)."; exit 1; }; \
+    printf '%s' "$ERPNEXT_VERSION" > /version-guard-ok
 
 # ---- Main stage. The :-MISSING sentinel keeps the image reference syntactically
 # valid when the arg is empty, so the guard's clear error surfaces instead of an
@@ -26,9 +27,9 @@ ARG ERPNEXT_VERSION
 USER root
 WORKDIR /home/frappe/frappe-bench
 
-# Force a build dependency on the guard stage: if ERPNEXT_VERSION was missing,
-# the guard already failed and this COPY (hence the whole build) cannot proceed.
-COPY --from=version-guard /etc/hostname /tmp/.version-guard-ok
+# Force a build dependency on the guard stage: the marker file only exists when
+# the guard passed, so a missing ERPNEXT_VERSION fails the build here too.
+COPY --from=version-guard /version-guard-ok /tmp/.version-guard-ok
 
 # Tooling: gosu (drop root -> frappe in entrypoint) + jq (parse user-apps.json).
 RUN apt-get update \
