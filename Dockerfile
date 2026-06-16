@@ -3,7 +3,7 @@
 # The Frappe/ERPNext major here MUST match every `external` app branch in
 # user-apps.json (e.g. v15 image <-> version-15 apps). See README "Upgrading".
 # =============================================================================
-FROM frappe/erpnext:v15.81.3
+FROM frappe/erpnext:v15.111.0
 
 USER root
 WORKDIR /home/frappe/frappe-bench
