@@ -6,8 +6,9 @@
 # =============================================================================
 services:
   mariadb:
-    # Frappe v15 targets MariaDB 10.6.
-    image: mariadb:10.6
+    # Version comes from deploy/release.env (source it or use --env-file). The
+    # :? form makes Compose fail fast if MARIADB_VERSION is unset.
+    image: mariadb:${MARIADB_VERSION:?MARIADB_VERSION is required (source deploy/release.env)}
     environment:
       MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
     volumes:
@@ -31,6 +32,10 @@ services:
   erpnext:
     build:
       context: .
+      args:
+        # Required base-image tag from deploy/release.env. The :? form makes
+        # Compose fail fast if unset; the Dockerfile guard enforces it at build.
+        ERPNEXT_VERSION: ${ERPNEXT_VERSION:?ERPNEXT_VERSION is required (source deploy/release.env)}
     env_file: .env
     depends_on:
       mariadb:

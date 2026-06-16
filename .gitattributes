@@ -12,6 +12,18 @@ Dockerfile text eol=lf
 *.md text eol=lf
 .env.example text eol=lf
 Procfile text eol=lf
+deploy/release.env text eol=lf
+erpnext text eol=lf
+
+# Windows batch wrappers need CRLF to be safe across cmd.exe versions.
+*.cmd text eol=crlf
+*.bat text eol=crlf
+
+# Pinned per-branch version defaults. On release/vN branches this file is the
+# ONLY intended difference from main. The `merge=ours` driver keeps the branch's
+# pins when merging main, so cross-branch merges never conflict here.
+# Enable the driver once per clone: git config merge.ours.driver true
+deploy/release.env merge=ours
 
 # Binary files should never be normalized.
 *.png binary
