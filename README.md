@@ -475,7 +475,7 @@ If a migration fails or the upgrade is broken:
 
 | Symptom | Cause | Fix |
 |---------|-------|-----|
-| `ERROR: ERPNEXT_VERSION build arg is required` | Build started without the version (e.g. missing Railway build var) | Set `ERPNEXT_VERSION` (from `deploy/release.env`) as a build arg/variable |
+| `BUILD FAILED: ERPNEXT_VERSION is not set` | Build started without the version (e.g. missing Railway build var) | Set `ERPNEXT_VERSION` (from `deploy/release.env`) as a **BUILD** variable in Railway Service > Settings > Variables |
 | `ERPNEXT_VERSION is required` / `MARIADB_VERSION is required` (Compose) | Ran `docker compose` without loading the pins | Add `--env-file .env --env-file deploy/release.env` to the command (or `set -a; . deploy/release.env; set +a` on bash) |
 | `ERROR: Set UPGRADE_ERPNEXT_VERSION=...` | Major version jump not acknowledged | Set `UPGRADE_ERPNEXT_VERSION=<new-major>` and redeploy |
 | `Backup FAILED — aborting` | Disk full or DB unreachable | Free disk; check DB connectivity; retry |

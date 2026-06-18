@@ -14,7 +14,36 @@ ARG ERPNEXT_VERSION
 FROM busybox:1.36 AS version-guard
 ARG ERPNEXT_VERSION
 RUN test -n "$ERPNEXT_VERSION" \
-      || { echo "ERROR: ERPNEXT_VERSION build arg is required (set deploy/release.env or a Railway build variable)."; exit 1; }; \
+      || { \
+        echo ""; \
+        echo "=========================================================="; \
+        echo "  BUILD FAILED: ERPNEXT_VERSION is not set"; \
+        echo "=========================================================="; \
+        echo ""; \
+        echo "  ERPNEXT_VERSION is a required build arg — the image cannot"; \
+        echo "  be built without it."; \
+        echo ""; \
+        echo "  HOW TO FIX:"; \
+        echo ""; \
+        echo "  Railway:  Service > Settings > Variables"; \
+        echo "            Add a BUILD variable (not deploy/runtime):"; \
+        echo "              ERPNEXT_VERSION=v16.10.1"; \
+        echo "            (copy the value from deploy/release.env in your repo)"; \
+        echo ""; \
+        echo "  Local:    Use the wrapper (loads release.env automatically):"; \
+        echo "              ./erpnext up --build"; \
+        echo "            Or pass both env files to compose:"; \
+        echo "              docker compose --env-file .env --env-file deploy/release.env up --build"; \
+        echo ""; \
+        echo "  NOTE: MARIADB_VERSION is NOT needed on Railway (managed MariaDB)."; \
+        echo "        It is only used by docker-compose.yml for local development."; \
+        echo "        Make sure to use the version supported by your ERPNext major:"; \
+        echo "          v15 -> MariaDB 10.6"; \
+        echo "          v16 -> MariaDB 11.8"; \
+        echo "=========================================================="; \
+        echo ""; \
+        exit 1; \
+      }; \
     printf '%s' "$ERPNEXT_VERSION" > /version-guard-ok
 
 # ---- Main stage. The :-MISSING sentinel keeps the image reference syntactically
