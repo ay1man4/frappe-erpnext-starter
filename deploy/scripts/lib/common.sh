@@ -85,10 +85,18 @@ wait_for_db() {
   until python3 - "$DB_HOST" "$DB_PORT" <<'PY' 2>/dev/null
 import socket, sys
 host, port = sys.argv[1], int(sys.argv[2])
-s = socket.socket()
-s.settimeout(2)
-s.connect((host, port))
-s.close()
+infos = socket.getaddrinfo(host, port, socket.AF_UNSPEC, socket.SOCK_STREAM)
+for family, socktype, proto, _, sockaddr in infos:
+    try:
+        s = socket.socket(family, socktype, proto)
+        s.settimeout(2)
+        s.connect(sockaddr)
+        s.close()
+        break
+    except OSError:
+        continue
+else:
+    sys.exit(1)
 PY
   do
     tries=$((tries + 1))

@@ -11,5 +11,5 @@
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 3
   },
-  "_comment": "Attach a Volume mounted at /home/frappe/frappe-bench/sites. Set env vars per README/.env.example (DB_*, REDIS_*_URL, SITE_NAME, ADMIN_PASSWORD, ENCRYPTION_KEY, PROJECT_ENV)."
+  "_comment": "REQUIRED BUILD variable: ERPNEXT_VERSION (copy from deploy/release.env, e.g. v16.10.1). Set it in Service > Settings > Variables as a BUILD variable. MARIADB_VERSION is NOT needed on Railway (managed MariaDB). REQUIRED RUNTIME vars: DB_HOST, DB_PORT, DB_NAME, DB_ROOT_PASSWORD, REDIS_CACHE_URL, REDIS_QUEUE_URL, REDIS_SOCKETIO_URL, SITE_NAME, ADMIN_PASSWORD, ENCRYPTION_KEY, PROJECT_ENV. Attach a Volume mounted at /home/frappe/frappe-bench/sites."
 }
