@@ -62,6 +62,8 @@ loads both env files** — your `.env` (settings/secrets) and `deploy/release.en
 (the pinned `ERPNEXT_VERSION` and `MARIADB_VERSION`) — so you never type the
 `--env-file` flags. It creates `.env` from `.env.example` on first run. Pass any
 Compose args through it, e.g. `./erpnext down`, `./erpnext logs -f`, `./erpnext exec erpnext bash`.
+For `exec`/`run` commands the wrapper automatically uses `--user frappe` so interactive
+sessions and bench commands run with correct file ownership.
 
 > **No wrapper / raw command** (works the same on every OS):
 > ```bash
@@ -75,6 +77,12 @@ Compose args through it, e.g. `./erpnext down`, `./erpnext logs -f`, `./erpnext 
 > **Versions are required, not defaulted.** If they aren't loaded, Compose (and the
 > Docker build guard) fail fast with a clear "required" message — never a silent
 > wrong version.
+>
+> **Interactive sessions without the wrapper:** add `--user frappe` to `exec`/`run`
+> so bench commands create files with the correct ownership:
+> ```bash
+> docker compose --env-file .env --env-file deploy/release.env exec --user frappe erpnext bash
+> ```
 
 Local extras (phpMyAdmin on :8090, hot-reload custom apps) are in `docker-compose.override.yml`,
 merged automatically.
