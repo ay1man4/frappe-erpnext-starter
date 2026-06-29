@@ -1,0 +1,7 @@
+web: bench serve --port ${PORT:-8000}
+socketio: node /home/frappe/frappe-bench/apps/frappe/socketio.js
+watch: bench watch
+worker_short: bench worker --queue short
+worker_long: bench worker --queue long
+worker_default: bench worker --queue default
+schedule: bench schedule

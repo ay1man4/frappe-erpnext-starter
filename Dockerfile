@@ -67,6 +67,7 @@ RUN apt-get update \
 
 # Process manager + entrypoint phase scripts.
 COPY --chown=frappe:frappe ./deploy/config/Procfile ./Procfile
+COPY --chown=frappe:frappe ./deploy/config/Procfile.dev ./Procfile.dev
 COPY --chown=frappe:frappe ./deploy/config/nginx.conf ./nginx.conf
 COPY --chown=frappe:frappe --chmod=0755 ./deploy/scripts /opt/erpnext-scripts
 # App manifest. Baked at a stable path the entrypoint reads (UA_FILE); in local
