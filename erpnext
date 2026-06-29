@@ -24,4 +24,14 @@ if [ ! -f .env ]; then
   echo ">> Created .env from .env.example — review secrets before production use."
 fi
 
+# For exec/run commands, land as the frappe user (not root) so bench commands
+# create files with the correct ownership.
+case "${1:-}" in
+  exec|run)
+    if [ "$#" -ge 2 ] && [ "$2" != "--user" ] && [ "$2" != "-u" ]; then
+      set -- "$1" --user frappe "${@:2}"
+    fi
+    ;;
+esac
+
 exec docker compose --env-file .env --env-file deploy/release.env "$@"
