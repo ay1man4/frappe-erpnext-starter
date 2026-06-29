@@ -46,7 +46,14 @@ ensure_custom_app_present() {
   local app_path="$BENCH_DIR/apps/$name"
 
   if [ -d "$app_path" ]; then
-    log "Custom app '$name' present in bench."
+    if is_dev && [ ! -L "$app_path" ] && [ -d "$STAGING_DIR/$name" ]; then
+      log "Custom app '$name' is a baked directory — replacing with symlink to staging (dev)."
+      rm -rf "$app_path"
+      ln -sfn "$STAGING_DIR/$name" "$app_path"
+      bench pip install -e "$app_path" || warn "pip install of '$name' failed; continuing."
+    else
+      log "Custom app '$name' present in bench."
+    fi
     return 0
   fi
 

@@ -34,6 +34,14 @@ HONCHO="$BENCH_DIR/env/bin/honcho"
 
 if is_dev; then
   log "Mode: dev — starting hot-reload stack (bench start)."
+  DEV_PROCFILE="/opt/deploy/config/Procfile.dev"
+  if [ ! -f "$DEV_PROCFILE" ]; then
+    DEV_PROCFILE="$BENCH_DIR/Procfile.dev"
+  fi
+  if [ -f "$DEV_PROCFILE" ]; then
+    cp "$DEV_PROCFILE" "$BENCH_DIR/Procfile"
+    log "Swapped in dev Procfile (bench serve with auto-reload)."
+  fi
   exec bench start
 fi
 
